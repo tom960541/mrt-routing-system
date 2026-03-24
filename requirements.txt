@@ -1,0 +1,9 @@
+streamlit
+
+google-genai
+
+Pillow
+
+gTTS
+
+streamlit-image-coordinates

@@ -1,0 +1,29 @@
+{
+    "BL01": {
+        "name": "dinpu",
+        "coords": [
+            647,
+            649
+        ],
+        "line_type": "MRT",
+        "neighbors": []
+    },
+    "BL07": {
+        "name": "guofu",
+        "coords": [
+            902,
+            649
+        ],
+        "line_type": "MRT",
+        "neighbors": []
+    },
+    "gl05": {
+        "name": "northdoor",
+        "coords": [
+            449,
+            558
+        ],
+        "line_type": "MRT",
+        "neighbors": []
+    }
+}
