@@ -14,7 +14,7 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 # ==========================================
 # 系統設定與地圖預設資料庫
 # ==========================================
-API_KEY = "AIzaSyAxDkIOX4d6Ve3pXPGAQtfT33NsKo4Gg7w" 
+API_KEY = st.secrets["GEMINI_API_KEY"]
 client = genai.Client(api_key=API_KEY)
 AVG_DISTANCE_PER_SEGMENT = 1.3
 
