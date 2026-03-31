@@ -220,8 +220,18 @@ with col_ui:
 
     st.divider()
 
-    st.selectbox("出發站", display_names, key="start_station")
-    st.selectbox("目的站", display_names, key="end_station")
+    # 計算目前系統記憶的站點，在選單列表中的第幾個位置 (index)
+    start_idx = display_names.index(st.session_state.start_station) if st.session_state.start_station in display_names else 0
+    end_idx = display_names.index(st.session_state.end_station) if st.session_state.end_station in display_names else 0
+
+    # 拔掉 key 參數，改用 index 來顯示，並捕捉使用者「手動」操作的結果
+    selected_start = st.selectbox("出發站", display_names, index=start_idx)
+    selected_end = st.selectbox("目的站", display_names, index=end_idx)
+
+    # 如果使用者「手動」切換了下拉選單，我們要把新選擇存回系統記憶中
+    if selected_start != st.session_state.start_station or selected_end != st.session_state.end_station:
+        st.session_state.start_station = selected_start
+        st.session_state.end_station = selected_end
 
     # 加入搜尋策略選項
     st.subheader("⚙️ 路徑規劃策略")
