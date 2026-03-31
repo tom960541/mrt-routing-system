@@ -59,39 +59,22 @@ class Station:
     def __init__(self, sid, name, coords, line_type, neighbors):
         self.sid = sid
         self.name = name
-        # 捨棄原本帶有代號的寫法，直接用純中文站名作為 UI 顯示
-        self.display_name = name 
+        self.display_name = f"{sid} {name}"
         self.coords = coords
         self.line_type = line_type
         self.neighbors = neighbors
 
 class TransitSystem:
-    def __init__(self, data):
+    def __init__(self, data, fare_func):
         self.stations = {}
+        self.fare_func = fare_func # 系統知道自己的計價方式
         if not data: return 
         for sid, info in data.items():
             self.stations[sid] = Station(
                 sid=sid, name=info["name"], coords=info["coords"],
-                line_type=info["line_type"], neighbors=info["neighbors"]
+                line_type=info["line_type"], neighbors=info.get("neighbors", [])
             )
-            
-    def get_station(self, sid):
-        return self.stations.get(sid)
 
-    def get_all_display_names(self):
-        if not self.stations: return []
-        # 利用 Set (集合) 的特性，自動過濾掉重複的中文站名
-        unique_names = set(s.display_name for s in self.stations.values())
-        return sorted(list(unique_names))
-        
-    def get_sid_by_name(self, display_name):
-        # 只要站名符合，就回傳找到的第一個代號。
-        # 不用擔心抓錯線，你的演算法會自動透過 neighbors 走到另一條線！
-        for sid, s in self.stations.items():
-            if s.display_name == display_name:
-                return sid
-        return None
-            
     def get_station(self, sid): return self.stations.get(sid)
     def get_all_display_names(self): return sorted([s.display_name for s in self.stations.values()])
     def get_sid_by_name(self, display_name):
@@ -149,7 +132,7 @@ def find_cheapest_path(system, start_id, end_id):
             new_path = path + [neighbor_id]
             new_fare, _ = calculate_fare_details(system, new_path)
             neighbor_line = system.get_station(neighbor_id).line_type
-            
+
             best_neigh = min_costs.get((neighbor_id, neighbor_line), (float('inf'), float('inf')))
             if new_fare < best_neigh[0] or (new_fare == best_neigh[0] and len(new_path) < best_neigh[1]):
                 min_costs[(neighbor_id, neighbor_line)] = (new_fare, len(new_path))
@@ -179,10 +162,10 @@ def calculate_fare_details(system, path_ids):
             segment, curr_line = [sid], next_line
         else:
             segment.append(sid)
-            
+
     if len(segment) > 1:
         total_fare += process_segment(segment, curr_line)
-        
+
     return total_fare, "\n".join(details)
 
 def generate_speech_audio(start_name, end_name, fare, path_str):
@@ -224,7 +207,7 @@ col_ui, col_map = st.columns([1, 2])
 with col_ui:
     st.subheader("✨ 告訴 AI 你想去哪裡")
     user_ai_input = st.text_input("輸入需求：", placeholder="例如：從高鐵站搭到駁二怎麼走？")
-    
+
     if st.button("🤖 AI 幫我找"):
         with st.spinner('AI 正在努力分析您的需求...'):
             s_id, e_id, status = get_stations_from_ai(user_ai_input, krt)
@@ -237,6 +220,8 @@ with col_ui:
 
     st.divider()
 
+    st.selectbox("出發站", display_names, key="start_station")
+    st.selectbox("目的站", display_names, key="end_station")
     # 計算目前系統記憶的站點，在選單列表中的第幾個位置 (index)
     start_idx = display_names.index(st.session_state.start_station) if st.session_state.start_station in display_names else 0
     end_idx = display_names.index(st.session_state.end_station) if st.session_state.end_station in display_names else 0
@@ -261,19 +246,19 @@ with col_ui:
     if st.button("🔍 開始規劃路徑", type="primary"):
         start_station = st.session_state.start_station
         end_station = st.session_state.end_station
-        
+
         if start_station == end_station:
             st.warning("您已經在目的地囉！")
         else:
             s_id = krt.get_sid_by_name(start_station)
             e_id = krt.get_sid_by_name(end_station)
-            
+
             # 動態切換尋路演算法
             if "最少站數" in search_mode:
                 path_ids = find_shortest_path(krt, s_id, e_id)
             else:
                 path_ids = find_cheapest_path(krt, s_id, e_id)
-                
+
             if path_ids:
                 total_fare, fare_details = calculate_fare_details(krt, path_ids)
                 display_path = []
@@ -300,15 +285,15 @@ with col_map:
         st.info("👆 請在地圖上點擊您的 **出發站**")
     else:
         st.warning("👆 請在地圖上點擊您的 **目的站**")
-        
+
     try:
         img = Image.open(map_config["img"])
         click_coords = streamlit_image_coordinates(img, key="map_click")
-        
+
         if click_coords is not None:
             cx, cy = click_coords["x"], click_coords["y"]
             click_point = (cx, cy)
-            
+
             if st.session_state.last_click != click_point:
                 st.session_state.last_click = click_point
                 closest_station, min_dist = None, float('inf')
@@ -317,7 +302,7 @@ with col_map:
                     dist = math.sqrt((cx-sx)**2 + (cy-sy)**2)
                     if dist < min_dist:
                         min_dist, closest_station = dist, station
-                
+
                 if closest_station and min_dist < 130:
                     if st.session_state.next_click_is_start:
                         st.session_state.start_station = closest_station.display_name
