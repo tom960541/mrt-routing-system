@@ -1,29 +1,1470 @@
 {
-    "BL01": {
-        "name": "dinpu",
+    "BR01": {
+        "name": "動物園",
         "coords": [
-            647,
+            1173,
+            941
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR02"
+        ]
+    },
+    "BR02": {
+        "name": "木柵",
+        "coords": [
+            1094,
+            945
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR01",
+            "BR03"
+        ]
+    },
+    "BR03": {
+        "name": "萬芳社區",
+        "coords": [
+            1015,
+            946
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR02",
+            "BR04"
+        ]
+    },
+    "BR04": {
+        "name": "萬芳醫院",
+        "coords": [
+            935,
+            942
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR03",
+            "BR05"
+        ]
+    },
+    "BR05": {
+        "name": "辛亥",
+        "coords": [
+            854,
+            943
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR04",
+            "BR06"
+        ]
+    },
+    "BR06": {
+        "name": "麟光",
+        "coords": [
+            785,
+            930
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR05",
+            "BR07"
+        ]
+    },
+    "BR07": {
+        "name": "六張犁",
+        "coords": [
+            757,
+            856
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR06",
+            "BR08"
+        ]
+    },
+    "BR08": {
+        "name": "科技大樓",
+        "coords": [
+            754,
+            802
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR07",
+            "BR09"
+        ]
+    },
+    "BR09": {
+        "name": "大安",
+        "coords": [
+            753,
+            746
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR08",
+            "BR10",
+            "R05"
+        ]
+    },
+    "BR10": {
+        "name": "忠孝復興",
+        "coords": [
+            759,
+            651
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR09",
+            "BR11",
+            "BL15"
+        ]
+    },
+    "BR11": {
+        "name": "南京復興",
+        "coords": [
+            757,
+            552
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR10",
+            "BR12",
+            "G16"
+        ]
+    },
+    "BR12": {
+        "name": "中山國中",
+        "coords": [
+            754,
+            481
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR11",
+            "BR13"
+        ]
+    },
+    "BR13": {
+        "name": "松山機場",
+        "coords": [
+            753,
+            421
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR12",
+            "BR14"
+        ]
+    },
+    "BR14": {
+        "name": "大直",
+        "coords": [
+            797,
+            375
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR13",
+            "BR15"
+        ]
+    },
+    "BR15": {
+        "name": "劍南路",
+        "coords": [
+            873,
+            374
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR14",
+            "BR16"
+        ]
+    },
+    "BR16": {
+        "name": "西湖",
+        "coords": [
+            953,
+            372
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR15",
+            "BR17"
+        ]
+    },
+    "BR17": {
+        "name": "港墘",
+        "coords": [
+            1025,
+            368
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR16",
+            "BR18"
+        ]
+    },
+    "BR18": {
+        "name": "文德",
+        "coords": [
+            1098,
+            374
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR17",
+            "BR19"
+        ]
+    },
+    "BR19": {
+        "name": "內湖",
+        "coords": [
+            1173,
+            370
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR18",
+            "BR20"
+        ]
+    },
+    "BR20": {
+        "name": "大湖公園",
+        "coords": [
+            1227,
+            406
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR19",
+            "BR21"
+        ]
+    },
+    "BR21": {
+        "name": "葫洲",
+        "coords": [
+            1225,
+            466
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR20",
+            "BR22"
+        ]
+    },
+    "BR22": {
+        "name": "東湖",
+        "coords": [
+            1221,
+            529
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR21",
+            "BR23"
+        ]
+    },
+    "BR23": {
+        "name": "南港軟體園區",
+        "coords": [
+            1227,
+            588
+        ],
+        "line_type": "BR",
+        "neighbors": [
+            "BR22",
+            "BR24"
+        ]
+    },
+    "BR24": {
+        "name": "南港展覽館",
+        "coords": [
+            1226,
             649
         ],
-        "line_type": "MRT",
-        "neighbors": []
+        "line_type": "BR",
+        "neighbors": [
+            "BR23",
+            "BL23"
+        ]
     },
-    "BL07": {
-        "name": "guofu",
+    "R02": {
+        "name": "象山",
         "coords": [
-            902,
-            649
+            1068,
+            753
         ],
-        "line_type": "MRT",
-        "neighbors": []
+        "line_type": "R",
+        "neighbors": [
+            "R03"
+        ]
     },
-    "gl05": {
-        "name": "northdoor",
+    "R03": {
+        "name": "台北101/世貿",
+        "coords": [
+            973,
+            747
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R02",
+            "R04"
+        ]
+    },
+    "R04": {
+        "name": "信義安和",
+        "coords": [
+            861,
+            752
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R03",
+            "R05"
+        ]
+    },
+    "R05": {
+        "name": "大安",
+        "coords": [
+            754,
+            749
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R04",
+            "R06",
+            "BR09"
+        ]
+    },
+    "R06": {
+        "name": "大安森林公園",
+        "coords": [
+            702,
+            746
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R05",
+            "R07"
+        ]
+    },
+    "R07": {
+        "name": "東門",
+        "coords": [
+            650,
+            746
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R06",
+            "R08",
+            "O06"
+        ]
+    },
+    "R08": {
+        "name": "中正紀念堂",
+        "coords": [
+            543,
+            746
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R07",
+            "R09",
+            "G10"
+        ]
+    },
+    "R09": {
+        "name": "台大醫院",
+        "coords": [
+            544,
+            703
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R08",
+            "R10"
+        ]
+    },
+    "R10": {
+        "name": "台北車站",
+        "coords": [
+            539,
+            639
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R09",
+            "R11",
+            "BL12"
+        ]
+    },
+    "R11": {
+        "name": "中山",
+        "coords": [
+            544,
+            556
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R10",
+            "R12",
+            "G14"
+        ]
+    },
+    "R12": {
+        "name": "雙連",
+        "coords": [
+            540,
+            498
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R11",
+            "R13"
+        ]
+    },
+    "R13": {
+        "name": "民權西路",
+        "coords": [
+            539,
+            449
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R12",
+            "R14",
+            "O11"
+        ]
+    },
+    "R14": {
+        "name": "圓山",
+        "coords": [
+            539,
+            399
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R13",
+            "R15"
+        ]
+    },
+    "R15": {
+        "name": "劍潭",
+        "coords": [
+            541,
+            355
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R14",
+            "R16"
+        ]
+    },
+    "R16": {
+        "name": "士林",
+        "coords": [
+            539,
+            309
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R15",
+            "R17"
+        ]
+    },
+    "R17": {
+        "name": "芝山",
+        "coords": [
+            539,
+            263
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R16",
+            "R18"
+        ]
+    },
+    "R18": {
+        "name": "明德",
+        "coords": [
+            540,
+            218
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R17",
+            "R19"
+        ]
+    },
+    "R19": {
+        "name": "石牌",
+        "coords": [
+            544,
+            175
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R18",
+            "R20"
+        ]
+    },
+    "R20": {
+        "name": "唭哩岸",
+        "coords": [
+            541,
+            134
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R19",
+            "R21"
+        ]
+    },
+    "R21": {
+        "name": "奇岩",
+        "coords": [
+            509,
+            104
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R20",
+            "R22"
+        ]
+    },
+    "R22": {
+        "name": "北投",
         "coords": [
             449,
-            558
+            104
         ],
-        "line_type": "MRT",
-        "neighbors": []
+        "line_type": "R",
+        "neighbors": [
+            "R21",
+            "R23",
+            "R22A"
+        ]
+    },
+    "R23": {
+        "name": "復興崗",
+        "coords": [
+            384,
+            104
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R22",
+            "R24"
+        ]
+    },
+    "R24": {
+        "name": "忠義",
+        "coords": [
+            320,
+            104
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R23",
+            "R25"
+        ]
+    },
+    "R25": {
+        "name": "關渡",
+        "coords": [
+            255,
+            106
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R24",
+            "R26"
+        ]
+    },
+    "R26": {
+        "name": "竹圍",
+        "coords": [
+            190,
+            104
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R25",
+            "R27"
+        ]
+    },
+    "R27": {
+        "name": "紅樹林",
+        "coords": [
+            124,
+            102
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R26",
+            "R28"
+        ]
+    },
+    "R28": {
+        "name": "淡水",
+        "coords": [
+            61,
+            102
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R27"
+        ]
+    },
+    "R22A": {
+        "name": "新北投",
+        "coords": [
+            450,
+            53
+        ],
+        "line_type": "R",
+        "neighbors": [
+            "R22"
+        ]
+    },
+    "G01": {
+        "name": "新店",
+        "coords": [
+            668,
+            1102
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G02"
+        ]
+    },
+    "G02": {
+        "name": "新店區公所",
+        "coords": [
+            666,
+            1063
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G01",
+            "G03"
+        ]
+    },
+    "G03": {
+        "name": "七張",
+        "coords": [
+            665,
+            1023
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G02",
+            "G04",
+            "G03A"
+        ]
+    },
+    "G04": {
+        "name": "大坪林",
+        "coords": [
+            668,
+            985
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G03",
+            "G05"
+        ]
+    },
+    "G05": {
+        "name": "景美",
+        "coords": [
+            669,
+            940
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G04",
+            "G06"
+        ]
+    },
+    "G06": {
+        "name": "萬隆",
+        "coords": [
+            664,
+            903
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G05",
+            "G07"
+        ]
+    },
+    "G07": {
+        "name": "公館",
+        "coords": [
+            662,
+            870
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G06",
+            "G08"
+        ]
+    },
+    "G08": {
+        "name": "台電大樓",
+        "coords": [
+            627,
+            830
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G07",
+            "G09"
+        ]
+    },
+    "G09": {
+        "name": "古亭",
+        "coords": [
+            591,
+            804
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G08",
+            "G10",
+            "O05"
+        ]
+    },
+    "G10": {
+        "name": "中正紀念堂",
+        "coords": [
+            540,
+            749
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G09",
+            "G11",
+            "R08"
+        ]
+    },
+    "G11": {
+        "name": "小南門",
+        "coords": [
+            439,
+            741
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G10",
+            "G12"
+        ]
+    },
+    "G12": {
+        "name": "西門",
+        "coords": [
+            425,
+            648
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G11",
+            "G13",
+            "BL11"
+        ]
+    },
+    "G13": {
+        "name": "北門",
+        "coords": [
+            446,
+            557
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G12",
+            "G14"
+        ]
+    },
+    "G14": {
+        "name": "中山",
+        "coords": [
+            544,
+            553
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G13",
+            "G15",
+            "R11"
+        ]
+    },
+    "G15": {
+        "name": "松江南京",
+        "coords": [
+            638,
+            555
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G14",
+            "G16",
+            "O08"
+        ]
+    },
+    "G16": {
+        "name": "南京復興",
+        "coords": [
+            757,
+            551
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G15",
+            "G17",
+            "BR11"
+        ]
+    },
+    "G17": {
+        "name": "台北小巨蛋",
+        "coords": [
+            895,
+            548
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G16",
+            "G18"
+        ]
+    },
+    "G18": {
+        "name": "南京三民",
+        "coords": [
+            988,
+            547
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G17",
+            "G19"
+        ]
+    },
+    "G19": {
+        "name": "松山",
+        "coords": [
+            1063,
+            550
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G18"
+        ]
+    },
+    "G03A": {
+        "name": "小碧潭",
+        "coords": [
+            619,
+            1022
+        ],
+        "line_type": "G",
+        "neighbors": [
+            "G03"
+        ]
+    },
+    "O01": {
+        "name": "南勢角",
+        "coords": [
+            412,
+            973
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O02"
+        ]
+    },
+    "O02": {
+        "name": "景安",
+        "coords": [
+            458,
+            935
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O01",
+            "O03"
+        ]
+    },
+    "O03": {
+        "name": "永安市場",
+        "coords": [
+            500,
+            893
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O02",
+            "O04"
+        ]
+    },
+    "O04": {
+        "name": "頂溪",
+        "coords": [
+            546,
+            848
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O03",
+            "O05"
+        ]
+    },
+    "O05": {
+        "name": "古亭",
+        "coords": [
+            595,
+            803
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O04",
+            "O06",
+            "G09"
+        ]
+    },
+    "O06": {
+        "name": "東門",
+        "coords": [
+            649,
+            745
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O05",
+            "O07",
+            "R07"
+        ]
+    },
+    "O07": {
+        "name": "忠孝新生",
+        "coords": [
+            648,
+            649
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O06",
+            "O08",
+            "BL14"
+        ]
+    },
+    "O08": {
+        "name": "松江南京",
+        "coords": [
+            644,
+            554
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O07",
+            "O09",
+            "G15"
+        ]
+    },
+    "O09": {
+        "name": "行天宮",
+        "coords": [
+            647,
+            497
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O08",
+            "O10"
+        ]
+    },
+    "O10": {
+        "name": "中山國小",
+        "coords": [
+            639,
+            452
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O09",
+            "O11"
+        ]
+    },
+    "O11": {
+        "name": "民權西路",
+        "coords": [
+            536,
+            450
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O10",
+            "O12",
+            "R13"
+        ]
+    },
+    "O12": {
+        "name": "大橋頭",
+        "coords": [
+            431,
+            446
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O11",
+            "O13",
+            "O50"
+        ]
+    },
+    "O13": {
+        "name": "台北橋",
+        "coords": [
+            394,
+            491
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O12",
+            "O14"
+        ]
+    },
+    "O14": {
+        "name": "菜寮",
+        "coords": [
+            354,
+            527
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O13",
+            "O15"
+        ]
+    },
+    "O15": {
+        "name": "三重",
+        "coords": [
+            312,
+            570
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O14",
+            "O16"
+        ]
+    },
+    "O16": {
+        "name": "先嗇宮",
+        "coords": [
+            275,
+            612
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O15",
+            "O17"
+        ]
+    },
+    "O17": {
+        "name": "頭前庄",
+        "coords": [
+            232,
+            649
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O16",
+            "O18"
+        ]
+    },
+    "O18": {
+        "name": "新莊",
+        "coords": [
+            195,
+            690
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O17",
+            "O19"
+        ]
+    },
+    "O19": {
+        "name": "輔大",
+        "coords": [
+            156,
+            721
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O18",
+            "O20"
+        ]
+    },
+    "O20": {
+        "name": "丹鳳",
+        "coords": [
+            113,
+            766
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O19",
+            "O21"
+        ]
+    },
+    "O21": {
+        "name": "迴龍",
+        "coords": [
+            75,
+            804
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O20"
+        ]
+    },
+    "O50": {
+        "name": "三重國小",
+        "coords": [
+            392,
+            410
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O12",
+            "O51"
+        ]
+    },
+    "O51": {
+        "name": "三和國中",
+        "coords": [
+            344,
+            360
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O50",
+            "O52"
+        ]
+    },
+    "O52": {
+        "name": "徐匯中學",
+        "coords": [
+            299,
+            313
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O51",
+            "O53"
+        ]
+    },
+    "O53": {
+        "name": "三民高中",
+        "coords": [
+            255,
+            266
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O52",
+            "O54"
+        ]
+    },
+    "O54": {
+        "name": "蘆洲",
+        "coords": [
+            212,
+            220
+        ],
+        "line_type": "O",
+        "neighbors": [
+            "O53"
+        ]
+    },
+    "BL01": {
+        "name": "頂埔",
+        "coords": [
+            95,
+            939
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL02"
+        ]
+    },
+    "BL02": {
+        "name": "永寧",
+        "coords": [
+            128,
+            903
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL01",
+            "BL03"
+        ]
+    },
+    "BL03": {
+        "name": "土城",
+        "coords": [
+            158,
+            875
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL02",
+            "BL04"
+        ]
+    },
+    "BL04": {
+        "name": "海山",
+        "coords": [
+            189,
+            839
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL03",
+            "BL05"
+        ]
+    },
+    "BL05": {
+        "name": "亞東醫院",
+        "coords": [
+            215,
+            813
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL04",
+            "BL06"
+        ]
+    },
+    "BL06": {
+        "name": "府中",
+        "coords": [
+            246,
+            785
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL05",
+            "BL07"
+        ]
+    },
+    "BL07": {
+        "name": "板橋",
+        "coords": [
+            278,
+            755
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL06",
+            "BL08"
+        ]
+    },
+    "BL08": {
+        "name": "新埔",
+        "coords": [
+            308,
+            719
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL07",
+            "BL09"
+        ]
+    },
+    "BL09": {
+        "name": "江子翠",
+        "coords": [
+            341,
+            692
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL08",
+            "BL10"
+        ]
+    },
+    "BL10": {
+        "name": "龍山寺",
+        "coords": [
+            372,
+            661
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL09",
+            "BL11"
+        ]
+    },
+    "BL11": {
+        "name": "西門",
+        "coords": [
+            425,
+            651
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL10",
+            "BL12",
+            "G12"
+        ]
+    },
+    "BL12": {
+        "name": "台北車站",
+        "coords": [
+            541,
+            647
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL11",
+            "BL13",
+            "R10"
+        ]
+    },
+    "BL13": {
+        "name": "善導寺",
+        "coords": [
+            592,
+            650
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL12",
+            "BL14"
+        ]
+    },
+    "BL14": {
+        "name": "忠孝新生",
+        "coords": [
+            648,
+            648
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL13",
+            "BL15",
+            "O07"
+        ]
+    },
+    "BL15": {
+        "name": "忠孝復興",
+        "coords": [
+            755,
+            649
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL14",
+            "BL16",
+            "BR10"
+        ]
+    },
+    "BL16": {
+        "name": "忠孝敦化",
+        "coords": [
+            843,
+            652
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL15",
+            "BL17"
+        ]
+    },
+    "BL17": {
+        "name": "國父紀念館",
+        "coords": [
+            901,
+            653
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL16",
+            "BL18"
+        ]
+    },
+    "BL18": {
+        "name": "市政府",
+        "coords": [
+            966,
+            648
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL17",
+            "BL19"
+        ]
+    },
+    "BL19": {
+        "name": "永春",
+        "coords": [
+            1015,
+            647
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL18",
+            "BL20"
+        ]
+    },
+    "BL20": {
+        "name": "後山埤",
+        "coords": [
+            1064,
+            647
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL19",
+            "BL21"
+        ]
+    },
+    "BL21": {
+        "name": "昆陽",
+        "coords": [
+            1124,
+            646
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL20",
+            "BL22"
+        ]
+    },
+    "BL22": {
+        "name": "南港",
+        "coords": [
+            1170,
+            648
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL21",
+            "BL23"
+        ]
+    },
+    "BL23": {
+        "name": "南港展覽館",
+        "coords": [
+            1226,
+            649
+        ],
+        "line_type": "BL",
+        "neighbors": [
+            "BL22",
+            "BR24"
+        ]
     }
 }
