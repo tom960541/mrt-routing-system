@@ -59,21 +59,38 @@ class Station:
     def __init__(self, sid, name, coords, line_type, neighbors):
         self.sid = sid
         self.name = name
-        self.display_name = f"{sid} {name}"
+        # 捨棄原本帶有代號的寫法，直接用純中文站名作為 UI 顯示
+        self.display_name = name 
         self.coords = coords
         self.line_type = line_type
         self.neighbors = neighbors
 
 class TransitSystem:
-    def __init__(self, data, fare_func):
+    def __init__(self, data):
         self.stations = {}
-        self.fare_func = fare_func # 系統知道自己的計價方式
         if not data: return 
         for sid, info in data.items():
             self.stations[sid] = Station(
                 sid=sid, name=info["name"], coords=info["coords"],
-                line_type=info["line_type"], neighbors=info.get("neighbors", [])
+                line_type=info["line_type"], neighbors=info["neighbors"]
             )
+            
+    def get_station(self, sid):
+        return self.stations.get(sid)
+
+    def get_all_display_names(self):
+        if not self.stations: return []
+        # 利用 Set (集合) 的特性，自動過濾掉重複的中文站名
+        unique_names = set(s.display_name for s in self.stations.values())
+        return sorted(list(unique_names))
+        
+    def get_sid_by_name(self, display_name):
+        # 只要站名符合，就回傳找到的第一個代號。
+        # 不用擔心抓錯線，你的演算法會自動透過 neighbors 走到另一條線！
+        for sid, s in self.stations.items():
+            if s.display_name == display_name:
+                return sid
+        return None
             
     def get_station(self, sid): return self.stations.get(sid)
     def get_all_display_names(self): return sorted([s.display_name for s in self.stations.values()])
