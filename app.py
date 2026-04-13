@@ -5,54 +5,7 @@ import re
 from collections import deque
 from PIL import Image
 from io import BytesIO
-from gtts import gTTSwith col_map:
-        st.subheader("🗺️ 互動地圖 (可滑動檢視全圖)")
-        if st.session_state.next_click_is_start: st.info("👆 請在地圖點擊 **出發站**")
-        else: st.warning("👆 請在地圖點擊 **終點站**")
-
-        # 🌟 魔法 CSS：強制開啟欄位的「捲軸」功能
-        st.markdown("""
-            <style>
-            /* 讓 Streamlit 欄位遇到超大內容時，自動產生橫向與直向捲軸 */
-            [data-testid="column"] {
-                overflow: auto !important;
-                max-height: 80vh; /* 設定視窗最大高度，避免整個網頁被無限拉長 */
-                border: 1px solid #ddd; /* 加一個淡淡的邊框讓範圍更清楚 */
-                border-radius: 8px;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
-        try:
-            # 1. 讀取原始圖片 (放棄縮放，維持 1:1，讓座標回歸最精準的狀態！)
-            img = Image.open(config["img"])
-            
-            # 2. 顯示圖片 (不加任何寬度限制參數，讓它原汁原味呈現)
-            click = streamlit_image_coordinates(img, key="map_click")
-            
-            if click:
-                cx, cy = click["x"], click["y"]
-                if st.session_state.last_click != (cx, cy):
-                    st.session_state.last_click = (cx, cy)
-                    closest, min_dist = None, float('inf')
-                    
-                    # 3. 回歸最單純的 1:1 座標計算 (不需要再乘上 scale_ratio 了)
-                    for s in mrt.stations.values():
-                        dist = math.sqrt((cx - s.coords[0])**2 + (cy - s.coords[1])**2)
-                        if dist < min_dist: 
-                            min_dist, closest = dist, s
-                    
-                    # 容錯距離也改回原本的 130 像素
-                    if closest and min_dist < 130:
-                        if st.session_state.next_click_is_start:
-                            st.session_state.start_st = closest.display_name
-                            st.session_state.next_click_is_start = False
-                        else:
-                            st.session_state.end_st = closest.display_name
-                            st.session_state.next_click_is_start = True
-                        st.rerun()
-        except Exception as e:
-            st.error(f"地圖元件錯誤: {e}")c
+from gtts import gTTS
 from google import genai
 from streamlit_image_coordinates import streamlit_image_coordinates
 
@@ -106,14 +59,14 @@ class TransitSystem:
                 sid=sid, name=info["name"], coords=info["coords"],
                 line_type=info["line_type"], neighbors=info.get("neighbors", [])
             )
-            
+
     def get_station(self, sid):
         return self.stations.get(sid)
 
     def get_all_display_names(self):
         unique_names = set(s.display_name for s in self.stations.values())
         return sorted(list(unique_names))
-        
+
     def get_sid_by_name(self, display_name):
         for sid, s in self.stations.items():
             if s.display_name == display_name:
@@ -142,7 +95,7 @@ def get_fare_and_details(system, path_ids):
     """從矩陣查票價並組合路徑明細"""
     if not path_ids or len(path_ids) < 2: return 0, "無需搭乘"
     start_id, end_id = path_ids[0], path_ids[-1]
-    
+
     # 查表獲取真實總票價
     try:
         total_fare = system.fare_matrix.get(start_id, {}).get(end_id, 0)
@@ -221,10 +174,10 @@ def run():
         st.divider()
         idx_s = names.index(st.session_state.start_st) if st.session_state.start_st in names else 0
         idx_e = names.index(st.session_state.end_st) if st.session_state.end_st in names else 0
-        
+
         sel_start = st.selectbox("出發站", names, index=idx_s)
         sel_end = st.selectbox("終點站", names, index=idx_e)
-        
+
         # 同步手動選單回 Session State
         st.session_state.start_st = sel_start
         st.session_state.end_st = sel_end
@@ -290,6 +243,5 @@ def run():
                         st.rerun()
         except Exception as e:
             st.error(f"地圖元件錯誤: {e}")
-
 if __name__ == "__main__":
     run()
