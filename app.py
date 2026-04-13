@@ -203,7 +203,7 @@ def run():
         try:
             img = Image.open(config["img"])
             # 獲取點擊座標
-            click = streamlit_image_coordinates(img, key="map_click", use_column_width=True)
+            click = streamlit_image_coordinates(img, key="map_click")
             if click:
                 cx, cy = click["x"], click["y"]
                 if st.session_state.last_click != (cx, cy):
