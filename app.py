@@ -196,44 +196,46 @@ def run():
                     st.audio(audio, format="audio/mp3", autoplay=True)
 
     with col_map:
-        st.subheader("🗺️ 互動地圖 (可滑動檢視全圖)")
+        st.subheader("🗺️ 互動地圖")
         if st.session_state.next_click_is_start: st.info("👆 請在地圖點擊 **出發站**")
         else: st.warning("👆 請在地圖點擊 **終點站**")
 
-        # 🌟 魔法 CSS：強制開啟欄位的「捲軸」功能
-        st.markdown("""
-            <style>
-            /* 讓 Streamlit 欄位遇到超大內容時，自動產生橫向與直向捲軸 */
-            [data-testid="column"] {
-                overflow: auto !important;
-                max-height: 80vh; /* 設定視窗最大高度，避免整個網頁被無限拉長 */
-                border: 1px solid #ddd; /* 加一個淡淡的邊框讓範圍更清楚 */
-                border-radius: 8px;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
         try:
-            # 1. 讀取原始圖片 (放棄縮放，維持 1:1，讓座標回歸最精準的狀態！)
+            # 1. 讀取原始圖片
             img = Image.open(config["img"])
-            
-            # 2. 顯示圖片 (不加任何寬度限制參數，讓它原汁原味呈現)
-            click = streamlit_image_coordinates(img, key="map_click")
-            
+            w_orig, h_orig = img.size
+
+            # 2. 設定我們想要的固定網頁顯示寬度 (例如 800)
+        
+            TARGET_WIDTH = 450
+            scale_ratio = TARGET_WIDTH / w_orig  # 計算縮放比例
+            TARGET_HEIGHT = int(h_orig * scale_ratio)
+
+            # 3. 使用 Python 強制縮放圖片
+            img_resized = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
+
+            # 4. 顯示縮放後的圖片 (移除 use_column_width，保持 1:1)
+            click = streamlit_image_coordinates(img_resized, key="map_click")
+
             if click:
                 cx, cy = click["x"], click["y"]
                 if st.session_state.last_click != (cx, cy):
                     st.session_state.last_click = (cx, cy)
                     closest, min_dist = None, float('inf')
-                    
-                    # 3. 回歸最單純的 1:1 座標計算 (不需要再乘上 scale_ratio 了)
+
                     for s in mrt.stations.values():
-                        dist = math.sqrt((cx - s.coords[0])**2 + (cy - s.coords[1])**2)
+                        # ✨ 重點：將 JSON 的原始座標也乘上縮放比例，對齊目前的畫面！
+                        scaled_x = s.coords[0] * scale_ratio
+                        scaled_y = s.coords[1] * scale_ratio
+
+                        dist = math.sqrt((cx - scaled_x)**2 + (cy - scaled_y)**2)
                         if dist < min_dist: 
                             min_dist, closest = dist, s
-                    
-                    # 容錯距離也改回原本的 130 像素
-                    if closest and min_dist < 130:
+
+                    # ✨ 容錯距離也要跟著縮放 (假設原本容許誤差 130px)
+                    threshold = 130 * scale_ratio
+
+                    if closest and min_dist < threshold:
                         if st.session_state.next_click_is_start:
                             st.session_state.start_st = closest.display_name
                             st.session_state.next_click_is_start = False
@@ -243,5 +245,6 @@ def run():
                         st.rerun()
         except Exception as e:
             st.error(f"地圖元件錯誤: {e}")
+
 if __name__ == "__main__":
     run()
