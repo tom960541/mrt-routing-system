@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import math
+import heapq
 import re
 from collections import deque
 from PIL import Image
@@ -10,22 +11,35 @@ from google import genai
 from streamlit_image_coordinates import streamlit_image_coordinates
 
 # ==========================================
-# 系統設定
+# 系統設定與策略模式
 # ==========================================
-# 建議將 API_KEY 放在 Streamlit Secrets 中
-API_KEY = st.secrets.get("GEMINI_API_KEY", "你的_API_KEY") 
+API_KEY = st.secrets.get("GEMINI_API_KEY", "你的_GEMINI_API_KEY") 
 client = genai.Client(api_key=API_KEY)
+
+AVG_DISTANCE_PER_SEGMENT = 1.3
+
+# 備用計價公式 (當 TDX 查無資料時的 Fallback)
+def krt_fare_strategy(dist, line_type):
+    fare = 20 + (math.ceil((dist - 5) / 2) * 5) if dist > 5 else 20
+    max_fare = 35 if "C" in line_type or "LRT" in line_type else 60
+    return min(fare, max_fare)
+
+def tpi_fare_strategy(dist, line_type):
+    fare = 20 + (math.ceil((dist - 5) / 3) * 5) if dist > 5 else 20
+    return min(fare, 65)
 
 MAP_DATABASE = {
     "高雄捷運": {
         "json": "krt_data.json", 
         "img": "krt_map.jpg", 
-        "fare_json": "krt_real_fare.json"
+        "fare_json": "krt_real_fare.json",
+        "fare_func": krt_fare_strategy
     },
     "台北捷運": {
         "json": "tpi_data.json", 
         "img": "TaipeiMetroStamp.png", 
-        "fare_json": "tpi_real_fare.json"
+        "fare_json": "tpi_real_fare.json",
+        "fare_func": tpi_fare_strategy
     }
 }
 
@@ -35,91 +49,136 @@ MAP_DATABASE = {
 @st.cache_data
 def load_json_data(filepath):
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
-        return {}
+        with open(filepath, 'r', encoding='utf-8') as f: return json.load(f)
+    except Exception: return {}
 
 class Station:
     def __init__(self, sid, name, coords, line_type, neighbors):
-        self.sid = sid
-        self.name = name
-        self.display_name = name # 顯示純中文名
-        self.coords = coords     # 座標：用於地圖點擊判定
-        self.line_type = line_type
-        self.neighbors = neighbors
+        self.sid, self.name, self.display_name = sid, name, name 
+        self.coords, self.line_type, self.neighbors = coords, line_type, neighbors
 
 class TransitSystem:
-    def __init__(self, data, fare_matrix):
+    def __init__(self, data, fare_matrix, fare_func):
         self.stations = {}
-        self.fare_matrix = fare_matrix # 真實票價矩陣
+        self.fare_matrix = fare_matrix
+        self.fare_func = fare_func  # 把備用公式存進來
         if not data: return 
         for sid, info in data.items():
             self.stations[sid] = Station(
                 sid=sid, name=info["name"], coords=info["coords"],
                 line_type=info["line_type"], neighbors=info.get("neighbors", [])
             )
-
-    def get_station(self, sid):
-        return self.stations.get(sid)
-
-    def get_all_display_names(self):
-        unique_names = set(s.display_name for s in self.stations.values())
-        return sorted(list(unique_names))
-
+            
+    def get_station(self, sid): return self.stations.get(sid)
+    def get_all_display_names(self): return sorted(list(set(s.display_name for s in self.stations.values())))
     def get_sid_by_name(self, display_name):
         for sid, s in self.stations.items():
-            if s.display_name == display_name:
-                return sid
+            if s.display_name == display_name: return sid
         return None
 
 # ==========================================
-# 邏輯函式
+# 演算法：路徑搜尋與雙引擎計價
 # ==========================================
 def find_shortest_path(system, start_id, end_id):
-    """BFS 尋找最少站數路徑"""
+    """【策略A】BFS：尋找最少站數 (不考慮轉乘成本)"""
     if not start_id or not end_id: return []
     queue = deque([[start_id]])
     visited = {start_id}
     while queue:
         path = queue.popleft()
         if path[-1] == end_id: return path
-        curr_st = system.get_station(path[-1])
-        for neighbor in curr_st.neighbors:
+        for neighbor in system.get_station(path[-1]).neighbors:
             if neighbor not in visited:
                 visited.add(neighbor)
                 queue.append(path + [neighbor])
     return []
 
+def calculate_fare_fallback(system, path_ids):
+    """內部函式：純數學公式估算 (Dijkstra 與輕軌依賴此函式)"""
+    if not path_ids or len(path_ids) < 2: return 0
+    total_fare = 0
+    segment, curr_line = [path_ids[0]], system.get_station(path_ids[0]).line_type
+    
+    for i in range(1, len(path_ids)):
+        sid, next_line = path_ids[i], system.get_station(path_ids[i]).line_type
+        if next_line != curr_line:
+            dist = (len(segment) - 1) * AVG_DISTANCE_PER_SEGMENT
+            total_fare += system.fare_func(dist, curr_line)
+            segment, curr_line = [sid], next_line
+        else: segment.append(sid)
+        
+    if len(segment) > 1:
+        dist = (len(segment) - 1) * AVG_DISTANCE_PER_SEGMENT
+        total_fare += system.fare_func(dist, curr_line)
+    return total_fare
+
+def find_cheapest_path(system, start_id, end_id):
+    """【策略B】Dijkstra：尋找最省票價 (利用 Fallback 公式作為圖論邊權重)"""
+    start_st = system.get_station(start_id)
+    if not start_st: return []
+    pq = [(0, 1, [start_id], start_st.line_type)]
+    min_costs = {(start_id, start_st.line_type): (0, 1)}
+
+    while pq:
+        curr_fare, num_stat, path, curr_line = heapq.heappop(pq)
+        curr_id = path[-1]
+        best = min_costs.get((curr_id, curr_line), (float('inf'), float('inf')))
+        if curr_fare > best[0] or (curr_fare == best[0] and num_stat > best[1]): continue
+        if curr_id == end_id: return path
+
+        for n_id in system.get_station(curr_id).neighbors:
+            new_path = path + [n_id]
+            # 用數學公式算出這個新路線的成本，作為權重
+            new_fare = calculate_fare_fallback(system, new_path)
+            n_line = system.get_station(n_id).line_type
+            
+            best_neigh = min_costs.get((n_id, n_line), (float('inf'), float('inf')))
+            if new_fare < best_neigh[0] or (new_fare == best_neigh[0] and len(new_path) < best_neigh[1]):
+                min_costs[(n_id, n_line)] = (new_fare, len(new_path))
+                heapq.heappush(pq, (new_fare, len(new_path), new_path, n_line))
+    return []
+
 def get_fare_and_details(system, path_ids):
-    """從矩陣查票價並組合路徑明細"""
+    """雙引擎計價器：優先查 TDX，查無資料就優雅降級為數學公式"""
     if not path_ids or len(path_ids) < 2: return 0, "無需搭乘"
     start_id, end_id = path_ids[0], path_ids[-1]
+    
+    # 1. 嘗試從 TDX 官方矩陣查表
+    tdx_fare = system.fare_matrix.get(start_id, {}).get(end_id)
+    
+    # 2. 如果官方有資料，用官方的；如果沒有(如輕軌)，啟用備用引擎估算
+    if tdx_fare is not None and tdx_fare > 0:
+        total_fare = tdx_fare
+        source_tag = "✅ 官方 TDX 真實票價"
+    else:
+        total_fare = calculate_fare_fallback(system, path_ids)
+        source_tag = "⚠️ 系統公式估算 (涵蓋輕軌/特殊路線)"
 
-    # 查表獲取真實總票價
-    try:
-        total_fare = system.fare_matrix.get(start_id, {}).get(end_id, 0)
-    except:
-        total_fare = "查無資料"
-
+    # 3. 組合文字明細
     details = []
     curr_line = system.get_station(path_ids[0]).line_type
     seg_start_name = system.get_station(path_ids[0]).name
+    
     for i in range(1, len(path_ids)):
         st_info = system.get_station(path_ids[i])
         if st_info.line_type != curr_line:
             details.append(f"- {curr_line} 線: {seg_start_name} ➔ {system.get_station(path_ids[i-1]).name}")
             seg_start_name = system.get_station(path_ids[i-1]).name
             curr_line = st_info.line_type
+            
     details.append(f"- {curr_line} 線: {seg_start_name} ➔ {system.get_station(path_ids[-1]).name}")
-    details.append(f"\n💰 官方真實票價：{total_fare} 元")
+    details.append(f"\n💰 總金額：{total_fare} 元 ({source_tag})")
+    
     return total_fare, "\n".join(details)
 
+# ==========================================
+# 輔助函式 (AI, 語音)
+# ==========================================
 def get_stations_from_ai(user_text, system):
     try:
         station_info = ", ".join([f"{s.name}({s.sid})" for s in system.stations.values()])
-        prompt = f"你是一個捷運解析器。請嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。站點列表:[{station_info}]。輸入：「{user_text}」"
-        response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
+        prompt = f"你是一個捷運解析器。請嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。列表:[{station_info}]。輸入：「{user_text}」"
+        response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
         match = re.search(r'\{.*\}', response.text.strip(), re.DOTALL)
         if match:
             data = json.loads(match.group(0))
@@ -128,7 +187,7 @@ def get_stations_from_ai(user_text, system):
     except Exception as e: return None, None, str(e)
 
 def generate_speech_audio(start_name, end_name, fare):
-    text = f"已為您規劃從{start_name}到{end_name}的路徑。總票價{fare}元。"
+    text = f"已為您規劃從{start_name}到{end_name}的路徑。票價為{fare}元。"
     tts = gTTS(text=text, lang='zh-tw')
     audio_fp = BytesIO()
     tts.write_to_fp(audio_fp)
@@ -136,64 +195,78 @@ def generate_speech_audio(start_name, end_name, fare):
     return audio_fp
 
 # ==========================================
-# UI 介面
+# UI 渲染邏輯
 # ==========================================
 def run():
-    st.title("🚆 智慧捷運路徑規劃系統 (點擊地圖+真實票價版)")
+    st.title("🚆 智慧捷運路徑規劃系統")
 
     selected_map = st.selectbox("🗺️ 選擇路網", list(MAP_DATABASE.keys()))
     config = MAP_DATABASE[selected_map]
 
     sys_data = load_json_data(config["json"])
     fare_data = load_json_data(config["fare_json"])
-    mrt = TransitSystem(sys_data, fare_data)
+    mrt = TransitSystem(sys_data, fare_data, config["fare_func"])
 
     if not sys_data:
         st.error("地圖資料載入失敗")
         return
 
-    # 初始化 Session State
     names = mrt.get_all_display_names()
     if 'start_st' not in st.session_state: st.session_state.start_st = names[0]
     if 'end_st' not in st.session_state: st.session_state.end_st = names[0]
     if 'next_click_is_start' not in st.session_state: st.session_state.next_click_is_start = True
     if 'last_click' not in st.session_state: st.session_state.last_click = None
 
-    col_ui, col_map = st.columns([1, 2])
+    col_ui, col_map = st.columns([1, 2.5])
 
     with col_ui:
-        st.subheader("✨ AI 語音/文字助理")
-        user_input = st.text_input("你想去哪？", placeholder="例如：從高鐵站搭到大東")
-        if st.button("🤖 AI 規劃"):
-            sid_s, sid_e, msg = get_stations_from_ai(user_input, mrt)
-            if sid_s and sid_e:
-                st.session_state.start_st = mrt.get_station(sid_s).display_name
-                st.session_state.end_st = mrt.get_station(sid_e).display_name
-                st.rerun()
+        st.subheader("✨ AI 語音助理")
+        user_input = st.text_input("你想去哪？", placeholder="例如：從愛河之心搭到大東")
+        if st.button("🤖 AI 幫我找", use_container_width=True):
+            with st.spinner("AI 解析中..."):
+                sid_s, sid_e, msg = get_stations_from_ai(user_input, mrt)
+                if sid_s and sid_e:
+                    st.session_state.start_st = mrt.get_station(sid_s).display_name
+                    st.session_state.end_st = mrt.get_station(sid_e).display_name
+                    st.rerun()
 
         st.divider()
         idx_s = names.index(st.session_state.start_st) if st.session_state.start_st in names else 0
         idx_e = names.index(st.session_state.end_st) if st.session_state.end_st in names else 0
-
+        
         sel_start = st.selectbox("出發站", names, index=idx_s)
         sel_end = st.selectbox("終點站", names, index=idx_e)
+        st.session_state.start_st, st.session_state.end_st = sel_start, sel_end
 
-        # 同步手動選單回 Session State
-        st.session_state.start_st = sel_start
-        st.session_state.end_st = sel_end
+        # ✨ 恢復路徑策略選單
+        search_mode = st.radio("⚙️ 選擇路徑規劃策略", ["最少站數 (BFS)", "最省票價 (Dijkstra)"], horizontal=True)
 
-        if st.button("🔍 查詢路徑", type="primary"):
+        if st.button("🔍 查詢路徑", type="primary", use_container_width=True):
             if sel_start == sel_end:
-                st.warning("起終點相同")
+                st.warning("您已經在目的地囉！")
             else:
                 id_s, id_e = mrt.get_sid_by_name(sel_start), mrt.get_sid_by_name(sel_end)
-                path = find_shortest_path(mrt, id_s, id_e)
+                
+                # 根據選擇呼叫不同的演算法
+                if "最少站數" in search_mode:
+                    path = find_shortest_path(mrt, id_s, id_e)
+                else:
+                    path = find_cheapest_path(mrt, id_s, id_e)
+
                 if path:
+                    # 交給雙引擎計價器
                     fare, details = get_fare_and_details(mrt, path)
-                    st.success(f"**真實總票價：{fare} 元**")
-                    st.text_area("路徑詳情", details, height=150)
+                    
+                    st.success(f"**系統報價：{fare} 元** | **總站數：{len(path)} 站**")
+                    st.text_area("路徑詳情", details, height=130)
+                    
+                    path_display = " ➔ ".join([f"[{mrt.get_station(i).line_type}] {mrt.get_station(i).name}" for i in path])
+                    st.info(f"建議路徑：\n{path_display}")
+                    
                     audio = generate_speech_audio(sel_start, sel_end, fare)
                     st.audio(audio, format="audio/mp3", autoplay=True)
+                else:
+                    st.error("找不到相連路徑")
 
     with col_map:
         st.subheader("🗺️ 互動地圖")
@@ -201,41 +274,27 @@ def run():
         else: st.warning("👆 請在地圖點擊 **終點站**")
 
         try:
-            # 1. 讀取原始高畫質圖片
             img = Image.open(config["img"])
             w_orig, h_orig = img.size
-
-            # 2. 設定我們想要的固定網頁顯示寬度
-            TARGET_WIDTH = 450
-            scale_ratio = TARGET_WIDTH / w_orig  # 依然保留縮放比例，用來校正座標
-
-            # 3. ✨ 捨棄 PIL 的破壞性縮放！
-            # 直接把原圖丟進去，用內建的 width 參數讓網頁前端自動高畫質縮放
-            click = streamlit_image_coordinates(
-                img, 
-                width=TARGET_WIDTH, 
-                key="map_click"
-            )
-
+            TARGET_WIDTH = 450  
+            scale_ratio = TARGET_WIDTH / w_orig
+            
+            click = streamlit_image_coordinates(img, width=TARGET_WIDTH, key="map_click")
+            
             if click:
                 cx, cy = click["x"], click["y"]
                 if st.session_state.last_click != (cx, cy):
                     st.session_state.last_click = (cx, cy)
                     closest, min_dist = None, float('inf')
-
+                    
                     for s in mrt.stations.values():
-                        # ✨ 將 JSON 的原始座標乘上縮放比例，對齊目前的畫面
                         scaled_x = s.coords[0] * scale_ratio
                         scaled_y = s.coords[1] * scale_ratio
-
                         dist = math.sqrt((cx - scaled_x)**2 + (cy - scaled_y)**2)
                         if dist < min_dist: 
                             min_dist, closest = dist, s
-
-                    # 容錯距離也跟著縮放
-                    threshold = 130 * scale_ratio
-
-                    if closest and min_dist < threshold:
+                    
+                    if closest and min_dist < (130 * scale_ratio):
                         if st.session_state.next_click_is_start:
                             st.session_state.start_st = closest.display_name
                             st.session_state.next_click_is_start = False
@@ -244,7 +303,4 @@ def run():
                             st.session_state.next_click_is_start = True
                         st.rerun()
         except Exception as e:
-            st.error(f"地圖元件錯誤: {e}")
-
-if __name__ == "__main__":
-    run()
+            st.error(f"地圖元件載入失敗: {e}")
