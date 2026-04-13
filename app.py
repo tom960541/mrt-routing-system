@@ -201,21 +201,21 @@ def run():
         else: st.warning("👆 請在地圖點擊 **終點站**")
 
         try:
-            # 1. 讀取原始圖片
+            # 1. 讀取原始高畫質圖片
             img = Image.open(config["img"])
             w_orig, h_orig = img.size
 
-            # 2. 設定我們想要的固定網頁顯示寬度 (例如 800)
-        
+            # 2. 設定我們想要的固定網頁顯示寬度
             TARGET_WIDTH = 450
-            scale_ratio = TARGET_WIDTH / w_orig  # 計算縮放比例
-            TARGET_HEIGHT = int(h_orig * scale_ratio)
+            scale_ratio = TARGET_WIDTH / w_orig  # 依然保留縮放比例，用來校正座標
 
-            # 3. 使用 Python 強制縮放圖片
-            img_resized = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
-
-            # 4. 顯示縮放後的圖片 (移除 use_column_width，保持 1:1)
-            click = streamlit_image_coordinates(img_resized, key="map_click")
+            # 3. ✨ 捨棄 PIL 的破壞性縮放！
+            # 直接把原圖丟進去，用內建的 width 參數讓網頁前端自動高畫質縮放
+            click = streamlit_image_coordinates(
+                img, 
+                width=TARGET_WIDTH, 
+                key="map_click"
+            )
 
             if click:
                 cx, cy = click["x"], click["y"]
@@ -224,7 +224,7 @@ def run():
                     closest, min_dist = None, float('inf')
 
                     for s in mrt.stations.values():
-                        # ✨ 重點：將 JSON 的原始座標也乘上縮放比例，對齊目前的畫面！
+                        # ✨ 將 JSON 的原始座標乘上縮放比例，對齊目前的畫面
                         scaled_x = s.coords[0] * scale_ratio
                         scaled_y = s.coords[1] * scale_ratio
 
@@ -232,7 +232,7 @@ def run():
                         if dist < min_dist: 
                             min_dist, closest = dist, s
 
-                    # ✨ 容錯距離也要跟著縮放 (假設原本容許誤差 130px)
+                    # 容錯距離也跟著縮放
                     threshold = 130 * scale_ratio
 
                     if closest and min_dist < threshold:
