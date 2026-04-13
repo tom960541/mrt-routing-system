@@ -206,7 +206,7 @@ def run():
             w_orig, h_orig = img.size
             
             # 2. 設定我們想要的固定網頁顯示寬度 (例如 800)
-            TARGET_WIDTH = 800
+            TARGET_WIDTH = 650
             scale_ratio = TARGET_WIDTH / w_orig  # 計算縮放比例
             TARGET_HEIGHT = int(h_orig * scale_ratio)
             
