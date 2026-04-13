@@ -202,26 +202,18 @@ def run():
 
         try:
             img = Image.open(config["img"])
-            
-            # ！！！關鍵修改在這裡！！！
-            # 加入 use_column_width=True，讓地圖自動縮放適應右側欄位的寬度
-            click = streamlit_image_coordinates(
-                img, 
-                key="map_click",
-                use_column_width=True
-            )
-            
+            # 獲取點擊座標
+            click = streamlit_image_coordinates(img, key="map_click", use_column_width=True)
             if click:
                 cx, cy = click["x"], click["y"]
                 if st.session_state.last_click != (cx, cy):
                     st.session_state.last_click = (cx, cy)
                     closest, min_dist = None, float('inf')
                     for s in mrt.stations.values():
-                        # 因為套件會自動還原縮放比例，這裡的距離公式不用做任何修改！
                         dist = math.sqrt((cx - s.coords[0])**2 + (cy - s.coords[1])**2)
                         if dist < min_dist: min_dist, closest = dist, s
                     
-                    if closest and min_dist < 130: 
+                    if closest and min_dist < 130: # 容錯距離
                         if st.session_state.next_click_is_start:
                             st.session_state.start_st = closest.display_name
                             st.session_state.next_click_is_start = False
