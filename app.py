@@ -195,7 +195,7 @@ def get_stations_from_ai(user_text, system):
 
         # 鎖定最新旗艦模型：gemini-2.0-flash
         model_candidates = [
-            'gemini-2.0-flash'
+            'gemini-3-flash-preview'
             
         ]
         
