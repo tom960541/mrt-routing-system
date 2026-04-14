@@ -204,8 +204,9 @@ def get_stations_from_ai(user_text, system):
         # 🚀 重大升級：建立「模型備援清單 (Fallback List)」
         # 系統會依序嘗試，直到找到你的 API Key 有權限使用的模型為止！
         model_candidates = [
-            'gemini-2.0-flash'
-           
+            'gemini-2.5-flash-native-audio-latest',
+            'gemini-3.1-flash-live-preview',
+            'gemini-2.5-flash-native-audio-preview-12-2025'
         ]
         
         response = None
