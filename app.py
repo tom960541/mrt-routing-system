@@ -189,10 +189,14 @@ def get_stations_from_ai(user_text, system):
         if not user_text.strip():
             return None, None, "您沒有輸入任何文字喔！"
 
-        # 🚀 鎖定最新旗艦模型：gemini-2.0-flash
+        # 🚀 關鍵修復：把站名跟「代碼 (sid)」綁定在一起交給 AI (例如: 左營(R16))
+        station_info = ", ".join([f"{s.name}({s.sid})" for s in system.stations.values()])
+        prompt = f"你是一個捷運解析器。請嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。站點列表:[{station_info}]。輸入：「{user_text}」"
+
+        # 鎖定最新旗艦模型：gemini-2.0-flash
         model_candidates = [
-            'gemini-3-flash-preview',
-            'gemini-1.5-flash' # 保留一個穩定版作為二次備援
+            'gemini-2.0-flash',
+            'gemini-1.5-flash' 
         ]
         
         response = None
@@ -203,7 +207,7 @@ def get_stations_from_ai(user_text, system):
             try:
                 response = client.models.generate_content(
                     model=model_name, 
-                    contents=f"你是一個捷運解析器。嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。站點:[{', '.join([s.name for s in system.stations.values()])}]。輸入：「{user_text}」"
+                    contents=prompt  # 使用帶有代碼的完整提示詞
                 )
                 break 
             except Exception as e:
@@ -211,15 +215,16 @@ def get_stations_from_ai(user_text, system):
                 continue
                 
         # --- 階段 2：驗證 AI 結果 ---
-        if response:
+        if response and response.text:
             match = re.search(r'\{.*\}', response.text.strip(), re.DOTALL)
             if match:
                 data = json.loads(match.group(0))
                 s_id, e_id = data.get("start_id"), data.get("end_id")
+                # 這次系統就能成功認出 AI 回傳的代碼了！
                 if s_id in system.stations and e_id in system.stations:
                     return s_id, e_id, "成功 (來自 Gemini 雲端 AI)"
 
-        # 🚨 AI 失敗！拋出例外以觸發本地端備援機制
+        # AI 失敗！拋出例外以觸發本地端備援機制
         raise Exception(f"API 無法服務 ({last_error})")
 
     except Exception as fallback_reason: 
