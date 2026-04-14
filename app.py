@@ -254,7 +254,11 @@ def run():
                 if sid_s and sid_e:
                     st.session_state.start_st = mrt.get_station(sid_s).display_name
                     st.session_state.end_st = mrt.get_station(sid_e).display_name
+                    st.success("✅ AI 解析成功！")
                     st.rerun()
+                else:
+                    # ✨ 把錯誤訊息印出來，我們才知道 AI 發生了什麼事！
+                    st.error(f"❌ AI 解析失敗：{msg}")
 
         st.divider()
         idx_s = names.index(st.session_state.start_st) if st.session_state.start_st in names else 0
