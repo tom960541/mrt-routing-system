@@ -195,15 +195,34 @@ def get_fare_and_details(system, path_ids):
 
 def get_stations_from_ai(user_text, system):
     try:
+        if not user_text.strip():
+            return None, None, "您沒有輸入任何文字喔！"
+
         station_info = ", ".join([f"{s.name}({s.sid})" for s in system.stations.values()])
         prompt = f"你是一個捷運解析器。請嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。站點列表:[{station_info}]。輸入：「{user_text}」"
-        response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
+        
+        # 使用目前最穩定且反應最快的 1.5-flash 模型
+        response = client.models.generate_content(
+            model='gemini-1.5-flash', 
+            contents=prompt
+        )
+        
         match = re.search(r'\{.*\}', response.text.strip(), re.DOTALL)
         if match:
             data = json.loads(match.group(0))
-            return data.get("start_id"), data.get("end_id"), "成功"
-        return None, None, "格式錯誤"
-    except Exception as e: return None, None, str(e)
+            
+            s_id = data.get("start_id")
+            e_id = data.get("end_id")
+            
+            # 防呆：檢查 AI 抓出的代號是不是真的存在於地圖中
+            if s_id not in system.stations or e_id not in system.stations:
+                return None, None, f"AI 產生了不存在的站點代號 ({s_id}, {e_id})"
+                
+            return s_id, e_id, "成功"
+            
+        return None, None, f"AI 格式錯誤，原始回答：{response.text}"
+    except Exception as e: 
+        return None, None, f"系統連線錯誤：{str(e)}"
 
 def generate_speech_audio(start_name, end_name, fare):
     text = f"已為您規劃從{start_name}到{end_name}的路徑。總票價{fare}元。"
@@ -247,18 +266,28 @@ def run():
 
     with col_ui:
         st.subheader("✨ AI 語音/文字助理")
-        user_input = st.text_input("你想去哪？", placeholder="例如：從高鐵站搭到愛河之心")
-        if st.button("🤖 AI 規劃", use_container_width=True):
-            with st.spinner("AI 解析中..."):
+        
+        # 🚀 重大修正：使用 st.form 包裝，防止 Streamlit 吃掉按鈕點擊事件
+        with st.form(key="ai_form"):
+            user_input = st.text_input("你想去哪？", placeholder="例如：從高鐵站搭到愛河之心")
+            # form 裡面的按鈕必須使用 st.form_submit_button
+            submit_btn = st.form_submit_button("🤖 AI 規劃", use_container_width=True)
+            
+        if submit_btn:
+            with st.spinner("AI 腦力激盪中..."):
                 sid_s, sid_e, msg = get_stations_from_ai(user_input, mrt)
+                
                 if sid_s and sid_e:
                     st.session_state.start_st = mrt.get_station(sid_s).display_name
                     st.session_state.end_st = mrt.get_station(sid_e).display_name
                     st.success("✅ AI 解析成功！")
-                    st.rerun()
+                    st.rerun() # 畫面更新
                 else:
-                    # ✨ 把錯誤訊息印出來，我們才知道 AI 發生了什麼事！
-                    st.error(f"❌ AI 解析失敗：{msg}")
+                    # ✨ 如果失敗，絕對會在這裡印出大大的紅色錯誤訊息
+                    st.error(f"❌ 解析失敗：{msg}")
+
+        st.divider()
+        # ...(下方原本的 idx_s = names.index... 程式碼保持不變)
 
         st.divider()
         idx_s = names.index(st.session_state.start_st) if st.session_state.start_st in names else 0
