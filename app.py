@@ -14,9 +14,20 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 # 系統設定與策略模式
 # ==========================================
 # 建議將 API_KEY 放在 Streamlit Secrets 中
-API_KEY = st.secrets.get("GEMINI_API_KEY", "你的_API_KEY") 
+import streamlit as st
+from google import genai
+
+# 直接從 Streamlit Secrets 讀取
+# 這樣如果找不到 Key 會直接報錯，避免你忘記設定
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+except KeyError:
+    st.error("找不到 API Key！請檢查 .streamlit/secrets.toml 是否已正確設定。")
+    st.stop() # 停止執行程式
+
 client = genai.Client(api_key=API_KEY)
 
+# 接下來就可以繼續寫你的 app 邏輯了...
 AVG_DISTANCE_PER_SEGMENT = 1.3
 
 # ✨ 備用計價公式 (當 TDX 查無資料時的 Fallback)
