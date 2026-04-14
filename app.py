@@ -198,51 +198,66 @@ def get_stations_from_ai(user_text, system):
         if not user_text.strip():
             return None, None, "您沒有輸入任何文字喔！"
 
-        station_info = ", ".join([f"{s.name}({s.sid})" for s in system.stations.values()])
-        prompt = f"你是一個捷運解析器。請嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。站點列表:[{station_info}]。輸入：「{user_text}」"
-        
-        # 🚀 重大升級：建立「模型備援清單 (Fallback List)」
-        # 系統會依序嘗試，直到找到你的 API Key 有權限使用的模型為止！
+        # 嘗試使用通用文字模型 (使用目前業界標準的 1.5 或是 2.0 版)
         model_candidates = [
-            'gemini-2.5-flash-native-audio-latest',
-            'gemini-3.1-flash-live-preview',
-            'gemini-2.5-flash-native-audio-preview-12-2025'
+            'gemini-2.0-flash',
+            'gemini-1.5-flash',
+            'gemini-1.0-pro'
         ]
         
         response = None
         last_error = ""
         
+        # --- 階段 1：嘗試呼叫雲端 AI ---
         for model_name in model_candidates:
             try:
                 response = client.models.generate_content(
                     model=model_name, 
-                    contents=prompt
+                    contents=f"你是一個捷運解析器。嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。站點:[{', '.join([s.name for s in system.stations.values()])}]。輸入：「{user_text}」"
                 )
-                break # ✨ 只要有一個模型成功，就立刻跳出迴圈！
+                break 
             except Exception as e:
                 last_error = str(e)
-                continue # ❌ 失敗了沒關係，默默嘗試名單上的下一個
+                continue
                 
-        # 如果整份名單都試過了還是失敗
-        if not response:
-            return None, None, f"您的金鑰無法存取已知模型。最後錯誤：{last_error}"
+        # --- 階段 2：驗證 AI 結果 ---
+        if response:
+            match = re.search(r'\{.*\}', response.text.strip(), re.DOTALL)
+            if match:
+                data = json.loads(match.group(0))
+                s_id, e_id = data.get("start_id"), data.get("end_id")
+                if s_id in system.stations and e_id in system.stations:
+                    return s_id, e_id, "成功 (來自雲端 AI)"
+
+        # 🚨 AI 失敗！拋出例外以觸發本地端備援機制
+        raise Exception(f"API 無法服務 ({last_error})")
+
+    except Exception as fallback_reason: 
+        # ==========================================
+        # 🚀 階段 3：本地端 NLP 備援機制 (Local Fallback)
+        # 當 AI 壞掉或沒有網路時，啟動 Python 關鍵字掃描引擎
+        # ==========================================
+        found_stations = []
         
-        match = re.search(r'\{.*\}', response.text.strip(), re.DOTALL)
-        if match:
-            data = json.loads(match.group(0))
+        # 將站名依長度排序 (避免「美麗島」被誤判為「美麗」)
+        sorted_stations = sorted(system.stations.values(), key=lambda s: len(s.name), reverse=True)
+        
+        for st in sorted_stations:
+            if st.name in user_text:
+                # 記錄站點 ID 與它在句子中出現的位置
+                found_stations.append((st.sid, user_text.find(st.name)))
+        
+        # 如果句子裡至少有找到兩個站名
+        if len(found_stations) >= 2:
+            # 根據站名在句子中出現的順序 (index) 來排序
+            found_stations.sort(key=lambda x: x[1])
             
-            s_id = data.get("start_id")
-            e_id = data.get("end_id")
+            # 第一個出現的當起點，最後一個出現的當終點
+            s_id = found_stations[0][0]
+            e_id = found_stations[-1][0]
+            return s_id, e_id, f"成功 (✨ 觸發系統本地端文字比對備援)"
             
-            # 防呆：檢查 AI 抓出的代號是不是真的存在於地圖中
-            if s_id not in system.stations or e_id not in system.stations:
-                return None, None, f"AI 產生了不存在的站點代號 ({s_id}, {e_id})"
-                
-            return s_id, e_id, "成功"
-            
-        return None, None, f"AI 格式錯誤，原始回答：{response.text}"
-    except Exception as e: 
-        return None, None, f"系統連線錯誤：{str(e)}"
+        return None, None, f"AI 連線失敗且無法由文字比對出站點。原因：{str(fallback_reason)}"
 
 def generate_speech_audio(start_name, end_name, fare):
     text = f"已為您規劃從{start_name}到{end_name}的路徑。總票價{fare}元。"
