@@ -13,12 +13,7 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 # ==========================================
 # 系統設定與策略模式
 # ==========================================
-# 建議將 API_KEY 放在 Streamlit Secrets 中
-import streamlit as st
-from google import genai
-
-# 直接從 Streamlit Secrets 讀取
-# 這樣如果找不到 Key 會直接報錯，避免你忘記設定
+# 從 Streamlit Secrets 讀取金鑰，防呆機制
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except KeyError:
@@ -27,7 +22,6 @@ except KeyError:
 
 client = genai.Client(api_key=API_KEY)
 
-# 接下來就可以繼續寫你的 app 邏輯了...
 AVG_DISTANCE_PER_SEGMENT = 1.3
 
 # ✨ 備用計價公式 (當 TDX 查無資料時的 Fallback)
@@ -45,13 +39,13 @@ MAP_DATABASE = {
         "json": "krt_data.json", 
         "img": "krt_map.jpg", 
         "fare_json": "krt_real_fare.json",
-        "fare_func": krt_fare_strategy  # 加回計費公式
+        "fare_func": krt_fare_strategy
     },
     "台北捷運": {
         "json": "tpi_data.json", 
         "img": "TaipeiMetroStamp.png", 
         "fare_json": "tpi_real_fare.json",
-        "fare_func": tpi_fare_strategy  # 加回計費公式
+        "fare_func": tpi_fare_strategy
     }
 }
 
@@ -70,16 +64,16 @@ class Station:
     def __init__(self, sid, name, coords, line_type, neighbors):
         self.sid = sid
         self.name = name
-        self.display_name = name # 顯示純中文名
-        self.coords = coords     # 座標：用於地圖點擊判定
+        self.display_name = name 
+        self.coords = coords     
         self.line_type = line_type
         self.neighbors = neighbors
 
 class TransitSystem:
     def __init__(self, data, fare_matrix, fare_func):
         self.stations = {}
-        self.fare_matrix = fare_matrix # 真實票價矩陣
-        self.fare_func = fare_func     # ✨ 儲存備用計價公式
+        self.fare_matrix = fare_matrix 
+        self.fare_func = fare_func     
         if not data: return 
         for sid, info in data.items():
             self.stations[sid] = Station(
@@ -118,8 +112,8 @@ def find_shortest_path(system, start_id, end_id):
                 queue.append(path + [neighbor])
     return []
 
-# ✨ 內部函式：純數學公式估算 (供 Dijkstra 與輕軌備用)
 def calculate_fare_fallback(system, path_ids):
+    """內部函式：純數學公式估算 (供 Dijkstra 與輕軌備用)"""
     if not path_ids or len(path_ids) < 2: return 0
     total_fare = 0
     segment, curr_line = [path_ids[0]], system.get_station(path_ids[0]).line_type
@@ -153,7 +147,6 @@ def find_cheapest_path(system, start_id, end_id):
 
         for n_id in system.get_station(curr_id).neighbors:
             new_path = path + [n_id]
-            # 用數學公式算出這個新路線的成本，作為權重
             new_fare = calculate_fare_fallback(system, new_path)
             n_line = system.get_station(n_id).line_type
             
@@ -168,10 +161,8 @@ def get_fare_and_details(system, path_ids):
     if not path_ids or len(path_ids) < 2: return 0, "無需搭乘"
     start_id, end_id = path_ids[0], path_ids[-1]
 
-    # 1. 嘗試查表獲取真實總票價
     tdx_fare = system.fare_matrix.get(start_id, {}).get(end_id)
 
-    # 2. ✨ 如果查得到就用官方的；查不到(如輕軌)就切換公式估算
     if tdx_fare is not None and tdx_fare > 0:
         total_fare = tdx_fare
         source_tag = "✅ 官方 TDX 真實票價"
@@ -198,11 +189,10 @@ def get_stations_from_ai(user_text, system):
         if not user_text.strip():
             return None, None, "您沒有輸入任何文字喔！"
 
-        # 嘗試使用通用文字模型 (使用目前業界標準的 1.5 或是 2.0 版)
+        # 🚀 鎖定最新旗艦模型：gemini-2.0-flash
         model_candidates = [
-            'gemini-2.0-flash',
-            'gemini-1.5-flash',
-            'gemini-1.0-pro'
+            'gemini-3-flash-preview',
+            'gemini-1.5-flash' # 保留一個穩定版作為二次備援
         ]
         
         response = None
@@ -227,7 +217,7 @@ def get_stations_from_ai(user_text, system):
                 data = json.loads(match.group(0))
                 s_id, e_id = data.get("start_id"), data.get("end_id")
                 if s_id in system.stations and e_id in system.stations:
-                    return s_id, e_id, "成功 (來自雲端 AI)"
+                    return s_id, e_id, "成功 (來自 Gemini 雲端 AI)"
 
         # 🚨 AI 失敗！拋出例外以觸發本地端備援機制
         raise Exception(f"API 無法服務 ({last_error})")
@@ -235,24 +225,17 @@ def get_stations_from_ai(user_text, system):
     except Exception as fallback_reason: 
         # ==========================================
         # 🚀 階段 3：本地端 NLP 備援機制 (Local Fallback)
-        # 當 AI 壞掉或沒有網路時，啟動 Python 關鍵字掃描引擎
         # ==========================================
         found_stations = []
         
-        # 將站名依長度排序 (避免「美麗島」被誤判為「美麗」)
         sorted_stations = sorted(system.stations.values(), key=lambda s: len(s.name), reverse=True)
         
         for st in sorted_stations:
             if st.name in user_text:
-                # 記錄站點 ID 與它在句子中出現的位置
                 found_stations.append((st.sid, user_text.find(st.name)))
         
-        # 如果句子裡至少有找到兩個站名
         if len(found_stations) >= 2:
-            # 根據站名在句子中出現的順序 (index) 來排序
             found_stations.sort(key=lambda x: x[1])
-            
-            # 第一個出現的當起點，最後一個出現的當終點
             s_id = found_stations[0][0]
             e_id = found_stations[-1][0]
             return s_id, e_id, f"成功 (✨ 觸發系統本地端文字比對備援)"
@@ -271,41 +254,35 @@ def generate_speech_audio(start_name, end_name, fare):
 # UI 介面
 # ==========================================
 def run():
-    # 避免直接執行此檔案時報錯
     try: st.set_page_config(page_title="智慧捷運路徑規劃系統", layout="wide")
     except: pass
 
-    st.title("🚆 智慧捷運路徑規劃系統 (高畫質+雙引擎版)")
+    st.title("🚆 智慧捷運路徑規劃系統 (2.0 Flash 雙引擎版)")
 
     selected_map = st.selectbox("🗺️ 選擇路網", list(MAP_DATABASE.keys()))
     config = MAP_DATABASE[selected_map]
 
     sys_data = load_json_data(config["json"])
     fare_data = load_json_data(config["fare_json"])
-    # ✨ 將 fare_func 傳入系統
     mrt = TransitSystem(sys_data, fare_data, config["fare_func"])
 
     if not sys_data:
         st.error("地圖資料載入失敗")
         return
 
-    # 初始化 Session State
     names = mrt.get_all_display_names()
     if 'start_st' not in st.session_state: st.session_state.start_st = names[0]
     if 'end_st' not in st.session_state: st.session_state.end_st = names[0]
     if 'next_click_is_start' not in st.session_state: st.session_state.next_click_is_start = True
     if 'last_click' not in st.session_state: st.session_state.last_click = None
 
-    # 將地圖區塊比例稍微調大 (1 : 2.5) 以配合高畫質縮放
     col_ui, col_map = st.columns([1, 2.5])
 
     with col_ui:
         st.subheader("✨ AI 語音/文字助理")
         
-        # 🚀 重大修正：使用 st.form 包裝，防止 Streamlit 吃掉按鈕點擊事件
         with st.form(key="ai_form"):
             user_input = st.text_input("你想去哪？", placeholder="例如：從高鐵站搭到愛河之心")
-            # form 裡面的按鈕必須使用 st.form_submit_button
             submit_btn = st.form_submit_button("🤖 AI 規劃", use_container_width=True)
             
         if submit_btn:
@@ -315,15 +292,12 @@ def run():
                 if sid_s and sid_e:
                     st.session_state.start_st = mrt.get_station(sid_s).display_name
                     st.session_state.end_st = mrt.get_station(sid_e).display_name
-                    st.success("✅ AI 解析成功！")
-                    st.rerun() # 畫面更新
+                    st.success(f"✅ 解析成功！狀態：{msg}")
+                    st.rerun() 
                 else:
-                    # ✨ 如果失敗，絕對會在這裡印出大大的紅色錯誤訊息
                     st.error(f"❌ 解析失敗：{msg}")
 
-        st.divider()
-        # ...(下方原本的 idx_s = names.index... 程式碼保持不變)
-
+        # 🧹 已清理乾淨的 UI 區塊
         st.divider()
         idx_s = names.index(st.session_state.start_st) if st.session_state.start_st in names else 0
         idx_e = names.index(st.session_state.end_st) if st.session_state.end_st in names else 0
@@ -334,7 +308,6 @@ def run():
         st.session_state.start_st = sel_start
         st.session_state.end_st = sel_end
 
-        # ✨ 加回策略選擇選單
         search_mode = st.radio("⚙️ 選擇路徑規劃策略", ["最少站數 (BFS)", "最省票價 (Dijkstra)"], horizontal=True)
 
         if st.button("🔍 查詢路徑", type="primary", use_container_width=True):
@@ -343,7 +316,6 @@ def run():
             else:
                 id_s, id_e = mrt.get_sid_by_name(sel_start), mrt.get_sid_by_name(sel_end)
                 
-                # ✨ 根據選擇呼叫不同演算法
                 if "最少站數" in search_mode:
                     path = find_shortest_path(mrt, id_s, id_e)
                 else:
@@ -354,7 +326,6 @@ def run():
                     st.success(f"**系統報價：{fare} 元** | **總站數：{len(path)} 站**")
                     st.text_area("路徑詳情", details, height=130)
                     
-                    # 顯示連串的路徑建議
                     path_display = " ➔ ".join([f"[{mrt.get_station(i).line_type}] {mrt.get_station(i).name}" for i in path])
                     st.info(f"建議路徑：\n{path_display}")
                     
@@ -369,15 +340,12 @@ def run():
         else: st.warning("👆 請在地圖點擊 **終點站**")
 
         try:
-            # 1. 讀取原始高畫質圖片
             img = Image.open(config["img"])
             w_orig, h_orig = img.size
 
-            # 2. 設定我們想要的固定網頁顯示寬度
             TARGET_WIDTH = 450
-            scale_ratio = TARGET_WIDTH / w_orig  # 依然保留縮放比例，用來校正座標
+            scale_ratio = TARGET_WIDTH / w_orig  
 
-            # 3. 直接把原圖丟進去，用內建的 width 參數讓網頁前端自動高畫質縮放
             click = streamlit_image_coordinates(
                 img, 
                 width=TARGET_WIDTH, 
@@ -391,7 +359,6 @@ def run():
                     closest, min_dist = None, float('inf')
 
                     for s in mrt.stations.values():
-                        # 將 JSON 的原始座標乘上縮放比例，對齊目前的畫面
                         scaled_x = s.coords[0] * scale_ratio
                         scaled_y = s.coords[1] * scale_ratio
 
@@ -399,7 +366,6 @@ def run():
                         if dist < min_dist: 
                             min_dist, closest = dist, s
 
-                    # 容錯距離也跟著縮放
                     threshold = 130 * scale_ratio
 
                     if closest and min_dist < threshold:
