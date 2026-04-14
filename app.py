@@ -201,11 +201,32 @@ def get_stations_from_ai(user_text, system):
         station_info = ", ".join([f"{s.name}({s.sid})" for s in system.stations.values()])
         prompt = f"你是一個捷運解析器。請嚴格輸出JSON: {{\"start_id\":\"...\",\"end_id\":\"...\"}}。站點列表:[{station_info}]。輸入：「{user_text}」"
         
-        # 使用目前最穩定且反應最快的 1.5-flash 模型
-        response = client.models.generate_content(
-            model='gemini-1.5-flash', 
-            contents=prompt
-        )
+        # 🚀 重大升級：建立「模型備援清單 (Fallback List)」
+        # 系統會依序嘗試，直到找到你的 API Key 有權限使用的模型為止！
+        model_candidates = [
+            'gemini-2.0-flash', 
+            'gemini-1.5-flash-latest', 
+            'gemini-1.5-flash', 
+            'gemini-pro'
+        ]
+        
+        response = None
+        last_error = ""
+        
+        for model_name in model_candidates:
+            try:
+                response = client.models.generate_content(
+                    model=model_name, 
+                    contents=prompt
+                )
+                break # ✨ 只要有一個模型成功，就立刻跳出迴圈！
+            except Exception as e:
+                last_error = str(e)
+                continue # ❌ 失敗了沒關係，默默嘗試名單上的下一個
+                
+        # 如果整份名單都試過了還是失敗
+        if not response:
+            return None, None, f"您的金鑰無法存取已知模型。最後錯誤：{last_error}"
         
         match = re.search(r'\{.*\}', response.text.strip(), re.DOTALL)
         if match:
